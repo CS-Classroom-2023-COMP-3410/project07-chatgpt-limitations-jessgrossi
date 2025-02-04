@@ -7,6 +7,9 @@ const gridRowsInput = document.getElementById("gridRows");
 const gridColsInput = document.getElementById("gridCols");
 const welcomeContainer = document.querySelector(".welcome-container");
 const gameContainer = document.querySelector(".game-container");
+const currentPlayerDisplay = document.getElementById("currentPlayer");
+const player1MatchesDisplay = document.getElementById("player1Matches");
+const player2MatchesDisplay = document.getElementById("player2Matches");
 
 let cards = [];
 let flippedCards = [];
@@ -15,6 +18,9 @@ let timerInterval = null;
 let timeElapsed = 0;
 let gridRows = 4;
 let gridCols = 4;
+let currentPlayer = 1; // Track whose turn it is
+let player1Matches = 0;
+let player2Matches = 0;
 
 // List of animal image filenames
 const animalImages = [
@@ -54,7 +60,7 @@ function initializeGame() {
   cards = shuffleArray(cardPairs);
   createGrid();
   resetGameInfo();
-  startTimer(); // ✅ Fix: Ensure the timer starts when the game begins
+  startTimer();
 }
 
 function shuffleArray(array) {
@@ -72,7 +78,7 @@ function createGrid() {
   cards.forEach((image) => {
     const card = document.createElement("div");
     card.className = "card";
-    card.dataset.symbol = image; // Using image filename for matching
+    card.dataset.symbol = image;
     card.innerHTML = `
       <div class="card-inner">
         <div class="card-front"></div>
@@ -108,29 +114,58 @@ function handleCardClick(e) {
 function checkForMatch() {
   const [card1, card2] = flippedCards;
 
-  // Compare image filenames instead of unique symbols
   if (card1.dataset.symbol === card2.dataset.symbol) {
     card1.classList.add("matched");
     card2.classList.add("matched");
+
+    // Update match count for the current player
+    if (currentPlayer === 1) {
+      player1Matches++;
+      player1MatchesDisplay.textContent = player1Matches;
+    } else {
+      player2Matches++;
+      player2MatchesDisplay.textContent = player2Matches;
+    }
+
     flippedCards = [];
-    
-    // Check if all cards are matched
+
+    // Check if game is over
     if (document.querySelectorAll(".card.matched").length === cards.length) {
       clearInterval(timerInterval);
-      alert(`Game completed in ${moves} moves and ${formatTime(timeElapsed)}!`);
+      declareWinner();
     }
   } else {
     setTimeout(() => {
       card1.classList.remove("flipped");
       card2.classList.remove("flipped");
       flippedCards = [];
+      switchTurn();
     }, 1000);
   }
 }
 
+function switchTurn() {
+  currentPlayer = currentPlayer === 1 ? 2 : 1;
+  currentPlayerDisplay.textContent = `Player ${currentPlayer}`;
+}
+
+function declareWinner() {
+  let winnerMessage = "";
+
+  if (player1Matches > player2Matches) {
+    winnerMessage = "Player 1 Wins!";
+  } else if (player2Matches > player1Matches) {
+    winnerMessage = "Player 2 Wins!";
+  } else {
+    winnerMessage = "It's a Tie!";
+  }
+
+  alert(`${winnerMessage} Game completed in ${moves} moves and ${formatTime(timeElapsed)}!`);
+}
+
 function startTimer() {
   timeElapsed = 0;
-  clearInterval(timerInterval); // ✅ Fix: Ensure previous timer is cleared
+  clearInterval(timerInterval);
   timerInterval = setInterval(() => {
     timeElapsed++;
     timer.textContent = formatTime(timeElapsed);
@@ -144,13 +179,21 @@ function formatTime(seconds) {
 function resetGameInfo() {
   moves = 0;
   moveCounter.textContent = moves;
-  clearInterval(timerInterval); // ✅ Fix: Clear timer on game reset
+  clearInterval(timerInterval);
   timer.textContent = "00:00";
+
+  // Reset player stats
+  currentPlayer = 1;
+  player1Matches = 0;
+  player2Matches = 0;
+  player1MatchesDisplay.textContent = player1Matches;
+  player2MatchesDisplay.textContent = player2Matches;
+  currentPlayerDisplay.textContent = `Player ${currentPlayer}`;
 }
 
 restartBtn.addEventListener("click", () => {
   gameContainer.classList.add("hidden");
   welcomeContainer.classList.remove("hidden");
-  clearInterval(timerInterval); // ✅ Fix: Clear the timer on restart
+  clearInterval(timerInterval);
   resetGameInfo();
 });
